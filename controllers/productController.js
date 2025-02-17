@@ -53,7 +53,7 @@ const addProduct = async (req, res) => {
       category,
       subCategory,
       sizes: processedSizes, // Sizes are already properly formatted
-      attributes: processedAtty,
+      attributes: atty,
       bestseller: bestseller === "true",
       image: imagesUrl, // Handle images as before
       date: Date.now(),
