@@ -1,67 +1,62 @@
-import productModel from "../models/productModel.js"
-import {v2 as cloudinary} from 'cloudinary'
-//function for add procuct
+import productModel from "../models/productModel.js";
+import { v2 as cloudinary } from "cloudinary";
+
+// Function for adding a product
 const addProduct = async (req, res) => {
   try {
-    const { name, description, attributeGroups, attributes, sizes, category, subCategory, bestseller } = req.body;
-   // console.log(req.body.attributeGroups);  // Check if attributes is a string
-
-    //console.log(req.body);  // Check what is inside sizes
+    const { name, description, attributeGroups, sizes, category, subCategory, bestseller } = req.body;
 
     let processedSizes = [];
     if (sizes && Array.isArray(sizes)) {
-      processedSizes = sizes.map(size => ({
+      processedSizes = sizes.map((size) => ({
         size: size.size,
         price: size.price,
       }));
     }
-    let processedAtty = [];
-    if (attributes && Array.isArray(attributes)) {
-      processedAtty = attributes.map(att => ({
-        name: att.name,
-        type: att.type,
-      }));
-      console.log(processedAtty)
-    }
+
     const image1 = req.files.image1 && req.files.image1[0];
-        const image2 = req.files.image2 && req.files.image2[0];
-        const image3 = req.files.image3 && req.files.image3[0];
-        const image4 = req.files.image4 && req.files.image4[0];
-        //console.log( name, description, attributes, category, subCategory, bestseller );
-    const images = [image1, image2, image3,image4];
-    let imagesUrl =[]
-    for(let i=0; i <images.length; i++){
-      if(images[i]){
-      let result = await cloudinary.uploader.upload(images[i].path, { resource_type: 'image' });
-      imagesUrl.push(result.secure_url);
+    const image2 = req.files.image2 && req.files.image2[0];
+    const image3 = req.files.image3 && req.files.image3[0];
+    const image4 = req.files.image4 && req.files.image4[0];
+    const images = [image1, image2, image3, image4];
+    let imagesUrl = [];
+    for (let i = 0; i < images.length; i++) {
+      if (images[i]) {
+        let result = await cloudinary.uploader.upload(images[i].path, { resource_type: "image" });
+        imagesUrl.push(result.secure_url);
       }
-        }
-    // Handle attributesGroups properly (might need JSON parsing)
-    //const attributeGroups = req.body.attributeGroups;
-        const atty = attributeGroups.map((item)=>{
-          
-          return item.attributes
-        })
-        console.log(atty);
+    }
+   let processedAG = attributeGroups.map((attributeGroups,attributeGroupsIndex)=>({
+      name: attributeGroups.name,
 
-    // Process each attribute group and attribute as needed...
-    // Your existing logic for sizes and images should be fine
 
+    }))
+    // Process attributeGroups from FormData
+    let processedAttributeGroups = [];
+    if (attributeGroups && Array.isArray(attributeGroups)) {
+      processedAttributeGroups = attributeGroups.map((group) => ({
+        name: group.name,
+        type: group.type,
+        visible: group.visible === "true" || group.visible === true, // Handle string or boolean
+        attributes: group.attributes && Array.isArray(group.attributes)
+          ? group.attributes.map((attr) => ({ name: attr.name }))
+          : [],
+      }));
+    }
     const productData = {
       name,
       description,
       category,
       subCategory,
-      sizes: processedSizes, // Sizes are already properly formatted
-      attributes: atty,
+      sizes: processedSizes,
+      attributeGroups: processedAttributeGroups, // Remove undefined entries
       bestseller: bestseller === "true",
-      image: imagesUrl, // Handle images as before
+      image: imagesUrl,
       date: Date.now(),
     };
+    console.log("Product Data to Save:", productData);
 
-    // Save the product
     const product = new productModel(productData);
-   // console.log(product);
     await product.save();
 
     res.json({ success: true, message: "Product added successfully!" });
@@ -71,24 +66,23 @@ const addProduct = async (req, res) => {
   }
 };
 
-
-//function for list product
+// Function for listing products
 const listProduct = async (req, res) => {
-    console.log("Request received for products list");  // Check if the request is being made
-    try {
-        const products = await productModel.find({});
-        res.json({ success: true, products });
-    } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
-    }
+  console.log("Request received for products list");
+  try {
+    const products = await productModel.find({});
+    res.json({ success: true, products });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
-// Add the update product function
+// Function for updating a product
 const updateProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
-    const { name, description, attributeGroups, attributes, sizes, category, subCategory, bestseller } = req.body;
+    const { productId } = req.params; // Note: Your route might need to be adjusted to match this
+    const { name, description, sizes, category, subCategory, bestseller, attributeGroups } = req.body;
 
     // Validate required fields
     if (!name || !description || !category || !subCategory) {
@@ -97,31 +91,37 @@ const updateProduct = async (req, res) => {
 
     // Process sizes
     const processedSizes = sizes && Array.isArray(sizes)
-      ? sizes.map(size => ({ size: size.size, price: size.price }))
+      ? sizes.map((size) => ({ size: size.size, price: size.price }))
       : [];
 
-    // Process attributes
-    const processedAtty = attributes && Array.isArray(attributes)
-      ? attributes.map(att => ({ name: att.name, type: att.type }))
-      : [];
+    // Process attributeGroups from FormData
+    let processedAttributeGroups = [];
+    if (attributeGroups && Array.isArray(attributeGroups)) {
+      processedAttributeGroups = attributeGroups.map((group) => ({
+        name: group.name,
+        type: group.type,
+        visible: group.visible === "true" || group.visible === true, // Handle string or boolean
+        attributes: group.attributes && Array.isArray(group.attributes)
+          ? group.attributes.map((attr) => ({ name: attr.name }))
+          : [],
+      }));
+    }
 
-    // Handle images - Check if new images are provided, else retain old images
-    const images = [
-      req.files.image1 && req.files.image1[0],
-      req.files.image2 && req.files.image2[0],
-      req.files.image3 && req.files.image3[0],
-      req.files.image4 && req.files.image4[0]
-    ];
-
+    // Handle images
+    const image1 = req.files.image1 && req.files.image1[0];
+    const image2 = req.files.image2 && req.files.image2[0];
+    const image3 = req.files.image3 && req.files.image3[0];
+    const image4 = req.files.image4 && req.files.image4[0];
+    const images = [image1, image2, image3, image4];
     let imagesUrl = [];
-    if (images.some(image => image !== undefined)) {
+    if (images.some((image) => image !== undefined)) {
       for (let i = 0; i < images.length; i++) {
         if (images[i]) {
           try {
-            let result = await cloudinary.uploader.upload(images[i].path, { resource_type: 'image' });
+            let result = await cloudinary.uploader.upload(images[i].path, { resource_type: "image" });
             imagesUrl.push(result.secure_url);
           } catch (uploadError) {
-            console.error(`Error uploading image ${i + 1}: `, uploadError);
+            console.error(`Error uploading image ${i + 1}:`, uploadError);
           }
         }
       }
@@ -134,14 +134,20 @@ const updateProduct = async (req, res) => {
       category,
       subCategory,
       sizes: processedSizes,
-      attributes: processedAtty,
+      attributeGroups: processedAttributeGroups,
       bestseller: bestseller === "true",
-      image: imagesUrl.length ? imagesUrl : undefined, // Only update images if new ones are provided
       date: Date.now(),
     };
+    if (imagesUrl.length) {
+      updatedProductData.image = imagesUrl; // Only update images if new ones are provided
+    }
 
-    // Find product by ID and update it
-    const updatedProduct = await productModel.findByIdAndUpdate(productId, updatedProductData, { new: true });
+    // Find and update the product
+    const updatedProduct = await productModel.findByIdAndUpdate(
+      productId,
+      updatedProductData,
+      { new: true, runValidators: true }
+    );
 
     if (!updatedProduct) {
       return res.json({ success: false, message: "Product not found!" });
@@ -149,35 +155,35 @@ const updateProduct = async (req, res) => {
 
     res.json({ success: true, message: "Product updated successfully!", product: updatedProduct });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating product:", error);
     res.json({ success: false, message: error.message });
   }
 };
 
+// Function for removing a product
+const removeProduct = async (req, res) => {
+  try {
+    await productModel.findByIdAndDelete(req.body.id);
+    res.json({ success: true, message: "Product removed" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
-//function for remove procuct
-const removeProduct = async (req, res) =>{
-    try {
-        await productModel.findByIdAndDelete(req.body.id)
-        res.json({succes:true, message:"product removed"})
-    } catch (error) {
-        console.log(error);
-        res.json({success:false, message:error.message})   
+// Function for single product info
+const singleProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
     }
+    res.json({ success: true, product });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
-}
-
-//function for singe procuct info
-const singleProduct = async (req, res) =>{
-    try {
-        const {productId} = req.params
-        const product = await productModel.findById(productId)
-        res.json({success:true,product})
-    } catch (error) {
-        console.log(error);
-        res.json({success:false, message:error.message})   
-        
-    }
-}
-
-export{addProduct, updateProduct, listProduct, removeProduct, singleProduct}
+export { addProduct, updateProduct, listProduct, removeProduct, singleProduct };
