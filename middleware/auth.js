@@ -9,7 +9,11 @@ const authUser = async (req, res, next) => {
   }
   try {
     const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded Token:", token_decode); // Log token decoding step
+
     req.body.userId = token_decode.id;
+    console.log("req.body after adding userId:", req.body); // Confirm userId is added
+
     next();
   } catch (error) {
     console.log(error);

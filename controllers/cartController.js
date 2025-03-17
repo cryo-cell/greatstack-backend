@@ -109,21 +109,30 @@ const getUserCart = async (req, res) => {
 // Clear user cart
 const clearCart = async (req, res) => {
   try {
+    console.log("🟢 clearCart Triggered");
+    console.log("Received Body:", req.body);
+
     const { userId } = req.body;
 
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "Missing userId" });
+    }
+
     const userData = await userModel.findById(userId);
+    console.log("User Data Found:", userData);
+
     if (!userData) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Clear cartData by setting it to an empty object
     await userModel.findByIdAndUpdate(userId, { $set: { cartData: {} } });
 
     res.json({ success: true, message: "Cart cleared successfully" });
   } catch (error) {
-    console.log(error);
+    console.error("🔴 Error in clearCart:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export { addToCart, updateCart, getUserCart, clearCart };
