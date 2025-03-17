@@ -9,7 +9,6 @@ const deliveryCharge = 10
 
 //Initialize Gateway
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
 //Placing order using COD
 const placeOrder = async (req, res)=> {
     try {

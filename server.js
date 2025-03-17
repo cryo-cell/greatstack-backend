@@ -17,7 +17,7 @@ connectCloudinary()
 //MIDDLEWARES
 app.use(express.json())
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],  // Allow requests from your frontend
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://greatstack-frontend.onrender.com'],  // Allow requests from your frontend
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,                // Allow cookies or auth headers if needed
 }));
