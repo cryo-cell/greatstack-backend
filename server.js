@@ -6,8 +6,8 @@ import connectCloudinary from './config/cloudinary.js'
 import categoryModel from './models/categoryModel.js'
 import subCategoryModel from './models/subcategoryModel.js'
 
-import categoryRoutes from './routes/categoryRoute.js'
-import subcategoryRoutes from './routes/subcategoryRoute.js'
+import categoryRouter from './routes/categoryRoute.js'
+import subcategoryRouter from './routes/subcategoryRoute.js'
 import userRouter from './routes/userRoute.js'
 import productRouter from './routes/productRoute.js'
 import cartRouter from './routes/cartRoute.js'
@@ -33,8 +33,8 @@ app.use(cors({
 }))
 
 // API Endpoints
-app.use('/api/category', categoryRoutes)
-app.use('/api/subcategory', subcategoryRoutes)
+app.use('/api/category', categoryRouter)
+app.use('/api/subcategory', subcategoryRouter)
 app.use('/api/user', userRouter)
 app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
