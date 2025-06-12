@@ -1,7 +1,6 @@
 // routes/subCategoryRouter.js
 import express from 'express'
 import subCategoryModel from '../models/subcategoryModel.js'
-import adminAuth from '../middleware/adminAuth.js'
 
 const subcategoryRouter = express.Router()
 

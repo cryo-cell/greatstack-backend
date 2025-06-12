@@ -1,8 +1,7 @@
 // routes/categoryRouter.js
 import express from 'express'
 import categoryModel from '../models/categoryModel.js'
-import adminAuth from '../middleware/adminAuth.js'
-
+import authUser from '../middleware/auth.js'
 const categoryRouter = express.Router()
 
 // Get all categories

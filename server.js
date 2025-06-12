@@ -26,7 +26,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
-    'https://greatstack-frontend-web.onrender.com',
+    'https://greatstack-frontend.onrender.com',
   ],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
