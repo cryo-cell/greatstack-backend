@@ -6,55 +6,35 @@ const addProduct = async (req, res) => {
   try {
     const { name, description, attributeGroups, sizes, category, subCategory, bestseller } = req.body;
 
-    let processedSizes = [];
-    if (sizes && Array.isArray(sizes)) {
-      processedSizes = sizes.map((size) => ({
-        size: size.size,
-        price: size.price,
-      }));
-    }
+    const processedSizes = Array.isArray(sizes)
+      ? sizes.map((size) => ({ size: size.size, price: size.price }))
+      : [];
 
-    const image1 = req.files.image1 && req.files.image1[0];
-    const image2 = req.files.image2 && req.files.image2[0];
-    const image3 = req.files.image3 && req.files.image3[0];
-    const image4 = req.files.image4 && req.files.image4[0];
-    const images = [image1, image2, image3, image4];
-    let imagesUrl = [];
-    for (let i = 0; i < images.length; i++) {
-      if (images[i]) {
-        let result = await cloudinary.uploader.upload(images[i].path, { resource_type: "image" });
-        imagesUrl.push(result.secure_url);
-      }
-    }
-   let processedAG = attributeGroups.map((attributeGroups,attributeGroupsIndex)=>({
-      name: attributeGroups.name,
+    const images = [req?.files?.image1?.[0], req?.files?.image2?.[0], req?.files?.image3?.[0], req?.files?.image4?.[0]];
+    const imagesUrl = await uploadImages(images);
 
+    const processedAttributeGroups = Array.isArray(attributeGroups)
+      ? attributeGroups.map((group) => ({
+          name: group.name,
+          type: group.type,
+          visible: group.visible === "true" || group.visible === true,
+          attributes: Array.isArray(group.attributes)
+            ? group.attributes.map((attr) => ({ name: attr.name }))
+            : [],
+        }))
+      : [];
 
-    }))
-    // Process attributeGroups from FormData
-    let processedAttributeGroups = [];
-    if (attributeGroups && Array.isArray(attributeGroups)) {
-      processedAttributeGroups = attributeGroups.map((group) => ({
-        name: group.name,
-        type: group.type,
-        visible: group.visible === "true" || group.visible === true, // Handle string or boolean
-        attributes: group.attributes && Array.isArray(group.attributes)
-          ? group.attributes.map((attr) => ({ name: attr.name }))
-          : [],
-      }));
-    }
     const productData = {
       name,
       description,
       category,
       subCategory,
       sizes: processedSizes,
-      attributeGroups: processedAttributeGroups, // Remove undefined entries
+      attributeGroups: processedAttributeGroups,
       bestseller: bestseller === "true",
       image: imagesUrl,
       date: Date.now(),
     };
-    console.log("Product Data to Save:", productData);
 
     const product = new productModel(productData);
     await product.save();
@@ -62,8 +42,19 @@ const addProduct = async (req, res) => {
     res.json({ success: true, message: "Product added successfully!" });
   } catch (error) {
     console.error(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
+};
+
+const uploadImages = async (files) => {
+  const imagesUrl = [];
+  for (const file of files) {
+    if (file) {
+      const result = await cloudinary.uploader.upload(file.path, { resource_type: "image" });
+      imagesUrl.push(result.secure_url);
+    }
+  }
+  return imagesUrl;
 };
 
 // Function for listing products
@@ -108,24 +99,25 @@ const updateProduct = async (req, res) => {
     }
 
     // Handle images
-    const image1 = req.files.image1 && req.files.image1[0];
-    const image2 = req.files.image2 && req.files.image2[0];
-    const image3 = req.files.image3 && req.files.image3[0];
-    const image4 = req.files.image4 && req.files.image4[0];
-    const images = [image1, image2, image3, image4];
-    let imagesUrl = [];
-    if (images.some((image) => image !== undefined)) {
-      for (let i = 0; i < images.length; i++) {
-        if (images[i]) {
-          try {
-            let result = await cloudinary.uploader.upload(images[i].path, { resource_type: "image" });
-            imagesUrl.push(result.secure_url);
-          } catch (uploadError) {
-            console.error(`Error uploading image ${i + 1}:`, uploadError);
-          }
-        }
-      }
-    }
+  // Collect uploaded image files
+// Collect uploaded image files
+const imageFiles = [req?.files?.image1?.[0], req?.files?.image2?.[0], req?.files?.image3?.[0], req?.files?.image4?.[0]];
+const uploadedUrls = await uploadImages(imageFiles);
+
+// Collect image URLs from form body (e.g. image1Url, image2Url...)
+const urlImages = [];
+for (let i = 1; i <= 4; i++) {
+  const url = req.body[`image${i}Url`];
+  if (url) urlImages.push(url);
+}
+
+// Combine both uploaded and URL-based images
+const imagesUrl = [...uploadedUrls, ...urlImages];
+
+// Collect image URLs from form body (e.g. image1Url, image2Url...
+
+// Combine both uploaded and URL-based images
+
 
     // Prepare data to update
     const updatedProductData = {

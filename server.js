@@ -40,6 +40,7 @@ app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/order', orderRouter)
 
+
 // Log active routes
 app._router.stack.forEach((r) => {
   if (r.route && r.route.path) {
