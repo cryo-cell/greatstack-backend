@@ -1,10 +1,18 @@
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js"; // Import product model if needed
 
+const getAttributeKey = (size, attributesObj) => {
+  const entries = Object.entries(attributesObj).sort();
+  const attrString = entries.map(([key, value]) => `${key}:${value}`).join("|");
+  return `${size}-${attrString}`;
+};
+
 // Add products to user cart
 const addToCart = async (req, res) => {
   try {
-    const { userId, itemId, size, attributes, price, name, image } = req.body;
+    const userId = req.userId;
+
+    const {  itemId, size, attributes, price, name, image } = req.body;
     console.log(req.body);
 
     const userData = await userModel.findById(userId);
@@ -12,36 +20,36 @@ const addToCart = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Ensure cartData is initialized
     if (!userData.cartData) {
       userData.cartData = {};
     }
     let cartData = userData.cartData;
 
-    // Generate a unique key combining size and attributes
-    const attributeKey = `${size}-${JSON.stringify(attributes)}`;
+    const parsedAttributes = typeof attributes === "string" ? JSON.parse(attributes) : attributes;
+    const attributeKey = getAttributeKey(size, parsedAttributes);
 
     if (!cartData[itemId]) {
-      cartData[itemId] = {}; // Initialize item in cartData
+      cartData[itemId] = {};
     }
 
     if (!cartData[itemId][attributeKey]) {
-      // If item with size and attributes does not exist, create it
       cartData[itemId][attributeKey] = {
         id: itemId,
         size: size,
-        attributes: attributes,
+        attributes: parsedAttributes,
         quantity: 1,
         price: price,
         name: name,
         image: image,
       };
     } else {
-      // If item exists, increase the quantity
       cartData[itemId][attributeKey].quantity += 1;
     }
 
-    await userModel.findByIdAndUpdate(userId, { $set: { cartData } });
+    userData.cartData = cartData;
+    userData.markModified("cartData");
+    await userData.save();
+
     console.log("Final Cart Data:", cartData);
 
     res.json({ success: true, message: "Added to cart", cartData });
@@ -50,11 +58,12 @@ const addToCart = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // Update user cart
 const updateCart = async (req, res) => {
   try {
-    const { userId, itemId, size, attributes, quantity } = req.body;
+    const userId = req.userId;
+
+    const {  itemId, size, attributes, quantity } = req.body;
 
     const userData = await userModel.findById(userId);
     if (!userData || !userData.cartData) {
@@ -62,7 +71,8 @@ const updateCart = async (req, res) => {
     }
 
     let cartData = userData.cartData;
-    const attributeKey = `${size}-${JSON.stringify(attributes)}`;
+    const parsedAttributes = typeof attributes === "string" ? JSON.parse(attributes) : attributes;
+    const attributeKey = getAttributeKey(size, parsedAttributes);
 
     if (cartData[itemId] && cartData[itemId][attributeKey]) {
       if (quantity === 0) {
@@ -75,7 +85,9 @@ const updateCart = async (req, res) => {
         cartData[itemId][attributeKey].quantity = quantity;
       }
 
-      await userModel.findByIdAndUpdate(userId, { cartData });
+      userData.cartData = cartData;
+      userData.markModified("cartData");
+      await userData.save();
 
       res.json({ success: true, message: "Cart updated", cartData });
     } else {
@@ -90,11 +102,13 @@ const updateCart = async (req, res) => {
 // Get user cart data
 const getUserCart = async (req, res) => {
   try {
-    const { userId } = req.body;
+const userId = req.userId;
 
     const userData = await userModel.findById(userId);
     if (!userData) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     let cartData = userData.cartData || {};
@@ -112,17 +126,21 @@ const clearCart = async (req, res) => {
     console.log("🟢 clearCart Triggered");
     console.log("Received Body:", req.body);
 
-    const { userId } = req.body;
+const userId = req.userId;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: "Missing userId" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing userId" });
     }
 
     const userData = await userModel.findById(userId);
     console.log("User Data Found:", userData);
 
     if (!userData) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     await userModel.findByIdAndUpdate(userId, { $set: { cartData: {} } });
@@ -133,6 +151,5 @@ const clearCart = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export { addToCart, updateCart, getUserCart, clearCart };
