@@ -16,7 +16,7 @@ categoryRouter.get('/', async (req, res) => {
 })
 
 // Add new category
-categoryRouter.post('/', adminAuth, async (req, res) => {
+categoryRouter.post('/', async (req, res) => {
   const { name } = req.body;
 
   if (!name) return res.status(400).json({ message: 'Category name required' });
@@ -37,7 +37,7 @@ categoryRouter.post('/', adminAuth, async (req, res) => {
 
 
 // Delete category
-categoryRouter.delete('/:name', adminAuth, async (req, res) => {
+categoryRouter.delete('/:name',  async (req, res) => {
   try {
     const name = decodeURIComponent(req.params.name).trim();
     const deleted = await categoryModel.findOneAndDelete({ name: new RegExp(`^${name}$`, 'i') });

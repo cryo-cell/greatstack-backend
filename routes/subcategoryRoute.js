@@ -16,7 +16,7 @@ subcategoryRouter.get('/', async (req, res) => {
 })
 
 // Add new subcategory
-subcategoryRouter.post('/', adminAuth, async (req, res) => {
+subcategoryRouter.post('/', async (req, res) => {
   const { name } = req.body
   if (!name) return res.status(400).json({ message: 'Subcategory name required' })
 
@@ -33,7 +33,7 @@ subcategoryRouter.post('/', adminAuth, async (req, res) => {
 })
 
 // Delete subcategory
-subcategoryRouter.delete('/:name', adminAuth, async (req, res) => {
+subcategoryRouter.delete('/:name', async (req, res) => {
   try {
     const deleted = await subCategoryModel.findOneAndDelete({ name: req.params.name })
     if (!deleted) return res.status(404).json({ message: 'Subcategory not found' })
