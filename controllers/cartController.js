@@ -128,20 +128,12 @@ const clearCart = async (req, res) => {
 
 const userId = req.userId;
 
-    if (!userId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing userId" });
-    }
+    
 
     const userData = await userModel.findById(userId);
     console.log("User Data Found:", userData);
 
-    if (!userData) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+   
 
     await userModel.findByIdAndUpdate(userId, { $set: { cartData: {} } });
 

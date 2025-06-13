@@ -8,7 +8,7 @@ cartRouter.post('/get', authUser, getUserCart)
 cartRouter.post('/add', authUser, addToCart)
 cartRouter.post('/update', authUser, updateCart)
 
-cartRouter.post('/clear', authUser, 
+cartRouter.post('/clear', 
     clearCart
 );
 export default cartRouter
